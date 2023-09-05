@@ -8,6 +8,11 @@ many
 lines
 */
 
+// pascal case: lowerCaseFirstLetter - variable names
+// camal case: UpperCaseFirstLetter - class names
+// kabob case: hyphen-between-words - file names and id's in HTML
+// snake case: UPPER_CASE_UNDERSCORES_BETWEEN - contents
+
 console.log("hello world");
 //keywords for declaring variables
 
@@ -23,21 +28,32 @@ myMoney = "bankrupt";
 console.log(favoritsong.length)
 
 
-let
 
-let getrandomindex=function(a) {
-    let rand = mathrandom()* a.length;
-    return math.floor(rand);
-};
-let randomDvice = getRandomWord(a)+" "+
 
-consol.log (
-    getRandomWord(a)+" "+
-    getRandomWord(h)+" "+
-    getRandomWord(v)+" "+
-    getRandomWord(adj)+" "+
-    getRandomWord(n)+" "+
 
-)
 
 //generateAdvise(advisers, howOften, verbs, adjectives, nouns);
+
+
+
+let classroom = {
+    roomNumber: 129,
+    seats:35,
+    teacher: {
+        firstName:"Robert",
+        lastName:"Hardy"
+    },
+
+    students: [
+    {firstName: "Cade", lastName: "Arney", grade:8},
+    {firstName: "Lana", lastName: "Krakow", grade:8}
+    ],
+    LightsOn: true,
+    turnLightsOff: function(){
+
+    this.LightsOn = false;
+    }
+};
+
+console.log(classroom);
+ 
