@@ -8,27 +8,19 @@ const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 600;
 
-<<<<<<< HEAD
-
-ctx.fillStyle = "red";
-ctx.fillRect(250, 350, 100, 100)
-
-
-
-=======
 class Shape {
 	constructor(startX, startY) {
 		this.x = startX;
 		this.y = startY;
 
-		this.width = 100;
-		this.height = 100;
+		this.width = 10;
+		this.height = 10;
 
-		this.color = "red";
+		this.color = "black";
 
-		this.speed = 10;
-		this.xDirection = 1;
-		this.yDirection = 1;
+		this.speed = 20;
+		this.xDirection = 4;
+		this.yDirection = 4;
 	}
 
 	update() {
@@ -50,13 +42,28 @@ class Shape {
 	}
 }
 
-let s1 = new Shape(0, 0);
+let shapes = [];
 
-s1.draw();
+for (let i = 0; i < 1500 ; i++) {
+	let s = new Shape(
+		Math.random() * canvas.width,
+		Math.random() * canvas.height
+	);
 
-canvas.addEventListener("click", () => {
+	s.speed = Math.random() * 1 + 11;
+
+	shapes.push(s);
+}
+
+let animationLoop = function () {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	s1.update();
-	s1.draw();
-});
->>>>>>> 1e27e0a8cdb3e4c4dfcdb562953012ab60210272
+
+	shapes.forEach((s) => {
+		s.update();
+		s.draw();
+	});
+
+	window.requestAnimationFrame(animationLoop);
+};
+
+window.requestAnimationFrame(animationLoop);
