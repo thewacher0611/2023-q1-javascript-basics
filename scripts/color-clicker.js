@@ -25,6 +25,8 @@ class ClickShape {
 		/** @type {CanvasRenderingContext2D} */
 		this.ctx = ctx;
 
+		this.type = null;
+
 		this.x = 0;
 		this.y = 0;
 
@@ -104,6 +106,7 @@ class SquareClickShape extends ClickShape {
 	 */
 	constructor(ctx) {
 		super(ctx);
+		this.type = "square";
 	}
 
 	draw() {
@@ -121,14 +124,22 @@ class CircleClickShape extends ClickShape {
 	 */
 	constructor(ctx) {
 		super(ctx);
+		this.type = "circle";
 	}
 
 	draw() {
 		this.ctx.fillStyle = this.isClicked ? "silver" : this.color;
 
+		const halfWidth = this.width / 2;
+
 		this.path = new Path2D();
-		//this.path.rect(this.x, this.y, this.width, this.width);
-		this.path.arc(this.x, this.y, this.width / 2, 0, Math.PI * 2);
+		this.path.arc(
+			this.x + halfWidth,
+			this.y + halfWidth,
+			halfWidth,
+			0,
+			Math.PI * 2
+		);
 		this.ctx.fill(this.path);
 	}
 }
@@ -153,12 +164,18 @@ class Game {
 		/**@type {Array<ClickShape>} */
 		this.shapes = [];
 
-		this.spawnInterval = 500; // milliseconds
+		this.spawnInterval = 350; // milliseconds
 		this.lastSpawnTime = 0;
 	}
 
 	getRandomTargetShape() {
-		let s = new ClickShape(scoreCtx);
+		let randShape = Math.random();
+
+		let s =
+			randShape < 0.5
+				? new SquareClickShape(scoreCtx)
+				: new CircleClickShape(scoreCtx);
+
 		s.color = this.getRandomColor();
 		s.width = scoreCanvas.height * 0.8;
 		s.x = scoreCanvas.width / 2 - s.width / 2;
@@ -182,15 +199,19 @@ class Game {
 		// reset our last spawn time
 		this.lastSpawnTime = 0;
 
-		let s = new ClickShape(ctx);
+		let randShape = Math.random();
+
+		let s =
+			randShape < 0.5
+				? new SquareClickShape(ctx)
+				: new CircleClickShape(ctx);
+
 		s.color = this.getRandomColor();
 		s.y = 0 - s.width;
 
 		let randX = Math.floor(Math.random() * (canvas.width / s.width));
 
 		s.x = randX * s.width;
-
-		//console.log(s);
 
 		// push the new shape into our array
 		this.shapes.push(s);
@@ -235,9 +256,12 @@ class Game {
 
 		// get the last shape drawn that was clicked and see if it
 		// matches our target color
+
+		let clickedShape = clickedShapes[clickedShapes.length - 1];
+
 		if (
-			clickedShapes[clickedShapes.length - 1].color ===
-			this.targetShape.color
+			clickedShape.color === this.targetShape.color &&
+			clickedShape.type === this.targetShape.type
 		) {
 			this.score++;
 			this.targetShape = this.getRandomTargetShape();
