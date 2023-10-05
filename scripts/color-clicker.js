@@ -17,23 +17,31 @@ const scoreCtx = scoreCanvas.getContext("2d");
 scoreCanvas.width = 800;
 scoreCanvas.height = 60;
 
+const direction = {
+	down: "down",
+	up: "up",
+	right: "right",
+	left: "left",
+};
+
 class ClickShape {
 	/**
 	 * @param {CanvasRenderingContext2D} ctx
+	 * @param {string} moveDirection
 	 */
-	constructor(ctx) {
+	constructor(ctx, moveDirection) {
 		/** @type {CanvasRenderingContext2D} */
 		this.ctx = ctx;
+		this.moveDirection = moveDirection;
 
 		this.type = null;
-
-		this.x = 0;
-		this.y = 0;
-
 		this.width = 100;
 
-		this.xDirection = 0;
-		this.yDirection = 1;
+		this.x = this.initX();
+		this.y = this.initY();
+
+		this.xDirection = this.initDirectionX();
+		this.yDirection = this.initDirectionY();
 
 		this.speed = 5;
 
@@ -46,20 +54,52 @@ class ClickShape {
 		this.path;
 	}
 
-	movingDirection() {
-		if (this.xDirection === 0 && this.yDirection === 1) {
-			return "down";
+	initDirectionY() {
+		switch (this.moveDirection) {
+			case direction.down:
+				return 1;
+			case direction.up:
+				return -1;
 		}
+		return 0;
+	}
 
-		if (this.xDirection === 0 && this.yDirection === -1) {
-			return "up";
+	initDirectionX() {
+		switch (this.moveDirection) {
+			case direction.right:
+				return 1;
+			case direction.left:
+				return -1;
 		}
+		return 0;
+	}
 
-		if (this.xDirection === 1 && this.yDirection === 0) {
-			return "right";
+	initY() {
+		switch (this.moveDirection) {
+			case direction.down:
+				return -this.width;
+			case direction.up:
+				return this.width + canvas.height;
+			default:
+				let ry = Math.floor(
+					Math.random() * (canvas.height / this.width)
+				);
+				return ry * this.width;
 		}
+	}
 
-		return "left";
+	initX() {
+		switch (this.moveDirection) {
+			case direction.right:
+				return -this.width;
+			case direction.left:
+				return this.width + canvas.width;
+			default:
+				let rx = Math.floor(
+					Math.random() * (canvas.width / this.width)
+				);
+				return rx * this.width;
+		}
 	}
 
 	update() {
@@ -67,19 +107,16 @@ class ClickShape {
 			return; // leave this method, nothing to do
 		}
 
-		switch (this.movingDirection()) {
-			case "down":
-				this.isVisible = this.y < canvas.height;
-				break;
-			case "up":
-				this.isVisible = this.y + this.width > 0;
-				break;
-			case "right":
-				this.isVisible = this.x < canvas.width;
-				break;
-			case "left":
-				this.isVisible = this.x + this.width > 0;
-				break;
+		// oob = out of bounds
+		let oob = this.width * 3;
+		if (
+			this.isClicked ||
+			this.y < -oob ||
+			this.y > canvas.height + oob ||
+			this.x < -oob ||
+			this.x > canvas.width + oob
+		) {
+			this.isVisible = false;
 		}
 
 		this.x += this.xDirection * this.speed;
@@ -88,50 +125,58 @@ class ClickShape {
 
 	draw() {}
 
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
 	checkForClicked(x, y) {
 		if (this.isClicked) {
 			return; // leave if we are clicked so we can't be un-clicked
 		}
 
 		//@ts-ignore path will not be undefined here
-		this.isClicked = ctx.isPointInPath(this.path, x, y);
-		console.log(this.path, x, y, this.x, this.y);
-		//this.color = "silver";
+		this.isClicked = this.ctx.isPointInPath(this.path, x, y);
+		// if (this.isClicked) {
+		// 	debugger;
+		// }
+		// console.log(this);
 	}
 }
 
 class SquareClickShape extends ClickShape {
 	/**
 	 * @param {CanvasRenderingContext2D} ctx
+	 * @param {string} moveDirection
 	 */
-	constructor(ctx) {
-		super(ctx);
+	constructor(ctx, moveDirection) {
+		super(ctx, moveDirection);
 		this.type = "square";
 	}
 
 	draw() {
-		this.ctx.fillStyle = this.isClicked ? "silver" : this.color;
-
+		this.ctx.save();
+		this.ctx.fillStyle = this.color;
 		this.path = new Path2D();
 		this.path.rect(this.x, this.y, this.width, this.width);
 		this.ctx.fill(this.path);
+		this.ctx.restore();
 	}
 }
 
 class CircleClickShape extends ClickShape {
 	/**
 	 * @param {CanvasRenderingContext2D} ctx
+	 * @param {string} moveDirection
 	 */
-	constructor(ctx) {
-		super(ctx);
+	constructor(ctx, moveDirection) {
+		super(ctx, moveDirection);
 		this.type = "circle";
 	}
 
 	draw() {
-		this.ctx.fillStyle = this.isClicked ? "silver" : this.color;
-
 		const halfWidth = this.width / 2;
-
+		this.ctx.save();
+		this.ctx.fillStyle = this.color;
 		this.path = new Path2D();
 		this.path.arc(
 			this.x + halfWidth,
@@ -140,6 +185,82 @@ class CircleClickShape extends ClickShape {
 			0,
 			Math.PI * 2
 		);
+		this.ctx.fill(this.path);
+		this.ctx.restore();
+	}
+}
+
+class TriangleClickShape extends ClickShape {
+	/**
+	 * @param {CanvasRenderingContext2D} ctx
+	 * @param {string} moveDirection
+	 */
+	constructor(ctx, moveDirection) {
+		super(ctx, moveDirection);
+		this.type = "triangle";
+	}
+
+	draw() {
+		const halfWidth = this.width / 2;
+		this.ctx.save();
+		this.ctx.fillStyle = this.color;
+		this.path = new Path2D();
+		this.path.moveTo(this.x + halfWidth, this.y);
+		this.path.lineTo(this.x, this.y + this.width);
+		this.path.lineTo(this.x + this.width, this.y + this.width);
+		this.path.lineTo(this.x + halfWidth, this.y);
+		this.ctx.fill(this.path);
+		this.ctx.restore();
+	}
+}
+
+class StarClickShape extends ClickShape {
+	/**
+	 * @param {CanvasRenderingContext2D} ctx
+	 * @param {string} moveDirection
+	 */
+	constructor(ctx, moveDirection) {
+		super(ctx, moveDirection);
+		this.type = "5-point-star";
+	}
+
+	draw() {
+		this.ctx.save();
+		this.drawStar(5);
+		this.ctx.restore();
+	}
+
+	/**
+	 * @param {number} points
+	 */
+	drawStar(points) {
+		const halfWidth = this.width / 2;
+		const outerRadius = halfWidth;
+		const innerRadius = halfWidth / 2;
+		let rot = (Math.PI / 2) * 3;
+		let x = this.x + halfWidth;
+		let y = this.y + halfWidth;
+		const cx = x;
+		const cy = y;
+		let step = Math.PI / points;
+
+		this.path = new Path2D();
+
+		this.path.moveTo(cx, cy - outerRadius);
+		for (let i = 0; i < points; i++) {
+			x = cx + Math.cos(rot) * outerRadius;
+			y = cy + Math.sin(rot) * outerRadius;
+			this.path.lineTo(x, y);
+			rot += step;
+
+			x = cx + Math.cos(rot) * innerRadius;
+			y = cy + Math.sin(rot) * innerRadius;
+			this.path.lineTo(x, y);
+			rot += step;
+		}
+		this.path.lineTo(cx, cy - outerRadius);
+		this.path.closePath();
+		this.ctx.fillStyle = this.color;
 		this.ctx.fill(this.path);
 	}
 }
@@ -166,21 +287,37 @@ class Game {
 
 		this.spawnInterval = 350; // milliseconds
 		this.lastSpawnTime = 0;
+		this.difficultyLevel = 1;
+		// update difficulty for every x number of points scored
+		this.difficultyInterval = 3;
 	}
 
 	getRandomTargetShape() {
-		let randShape = Math.random();
-
-		let s =
-			randShape < 0.5
-				? new SquareClickShape(scoreCtx)
-				: new CircleClickShape(scoreCtx);
-
+		let s = this.getRandomShape(scoreCtx, direction.down);
 		s.color = this.getRandomColor();
 		s.width = scoreCanvas.height * 0.8;
 		s.x = scoreCanvas.width / 2 - s.width / 2;
 		s.y = 5;
 		return s;
+	}
+
+	/**
+	 * @param {CanvasRenderingContext2D} context
+	 * @param {string} direction
+	 */
+	getRandomShape(context, direction) {
+		const numberOfShapes = Math.min(this.difficultyLevel, 4);
+		let r = Math.floor(Math.random() * numberOfShapes);
+		switch (r) {
+			case 1:
+				return new CircleClickShape(context, direction);
+			case 2:
+				return new TriangleClickShape(context, direction);
+			case 3:
+				return new StarClickShape(context, direction);
+			default:
+				return new SquareClickShape(context, direction);
+		}
 	}
 
 	getRandomColor() {
@@ -194,24 +331,27 @@ class Game {
 			return; // leave, not enough time since last spawn
 		}
 
-		// console.log("in spawnShape");
-
 		// reset our last spawn time
 		this.lastSpawnTime = 0;
 
-		let randShape = Math.random();
+		let directionLimit = Math.min(this.difficultyLevel, 4);
+		let randomDirection = Math.floor(Math.random() * directionLimit);
+		let spawnDirection = direction.down;
 
-		let s =
-			randShape < 0.5
-				? new SquareClickShape(ctx)
-				: new CircleClickShape(ctx);
+		switch (randomDirection) {
+			case 1:
+				spawnDirection = direction.up;
+				break;
+			case 2:
+				spawnDirection = direction.right;
+				break;
+			case 3:
+				spawnDirection = direction.left;
+				break;
+		}
 
+		let s = this.getRandomShape(ctx, spawnDirection);
 		s.color = this.getRandomColor();
-		s.y = 0 - s.width;
-
-		let randX = Math.floor(Math.random() * (canvas.width / s.width));
-
-		s.x = randX * s.width;
 
 		// push the new shape into our array
 		this.shapes.push(s);
@@ -225,18 +365,33 @@ class Game {
 		});
 
 		this.shapes = this.shapes.filter((s) => s.isVisible);
-
-		// console.log("length of shapes array", this.shapes.length);
 	}
 
 	draw() {
-		this.shapes.forEach((s) => {
-			s.draw();
-		});
-
 		scoreCtx.font = "50px fantasy";
 		scoreCtx.fillStyle = "red";
 		scoreCtx.fillText(`Score: ${this.score}`, 0, 55);
+
+		if (this.isGameOver) {
+			// write out game over!
+			ctx.save();
+			ctx.fillStyle = "red";
+			ctx.strokeStyle = "yellow";
+			ctx.font = "60px Comic Sans MS";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText("GAME OVER!", canvas.width / 2, canvas.height / 2);
+			ctx.strokeText("GAME OVER!", canvas.width / 2, canvas.height / 2);
+			ctx.restore();
+
+			// make sure we don't draw anything else if the
+			// game is over
+			return;
+		}
+
+		this.shapes.forEach((s) => {
+			s.draw();
+		});
 
 		this.targetShape.draw();
 	}
@@ -247,9 +402,6 @@ class Game {
 		});
 
 		let clickedShapes = this.shapes.filter((s) => s.isClicked);
-		// console.log(clickedShapes);
-		// debugger;
-
 		if (clickedShapes.length === 0) {
 			return;
 		}
@@ -264,16 +416,21 @@ class Game {
 			clickedShape.type === this.targetShape.type
 		) {
 			this.score++;
+			this.updateDifficulty();
 			this.targetShape = this.getRandomTargetShape();
 		} else {
 			this.isGameOver = true;
 		}
 	}
+
+	updateDifficulty() {
+		if (this.score % this.difficultyInterval === 0) {
+			this.difficultyLevel++;
+		}
+	}
 }
 
 let game = new Game();
-
-//console.log(game);
 
 let currentTime = 0;
 
@@ -287,12 +444,14 @@ let gameLoop = function (timestamp) {
 	game.update(elapsedTime);
 	game.draw();
 
-	window.requestAnimationFrame(gameLoop);
+	if (game.isGameOver === false) {
+		window.requestAnimationFrame(gameLoop);
+	}
 };
 
 window.requestAnimationFrame(gameLoop);
 
 canvas.addEventListener("click", (ev) => {
-	console.log("mouse event", ev.offsetX, ev.offsetY);
+	// console.log("mouse event", ev.offsetX, ev.offsetY);
 	game.checkForClicked(ev.offsetX, ev.offsetY);
 });
